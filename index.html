@@ -47,7 +47,7 @@
         .final-word { font-size: 48px; color: #FFD700; font-weight: 900; text-shadow: 2px 2px 10px rgba(0,0,0,0.8); }
 
         .lane { height: 65%; position: relative; width: 100%; background: transparent; overflow: hidden; }
-        .fixed-controls { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 15px; z-index: 1000; } /* Z-INDEX FIXED */
+        .fixed-controls { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 15px; z-index: 1000; }
         .arrow-btn { width: 80px; height: 80px; background: rgba(255,255,255,0.2); border: 3px solid white; border-radius: 15px; font-size: 40px; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; }
         
         .char-container { position: absolute; left: 100px; z-index: 100; pointer-events: none; }
@@ -85,7 +85,7 @@
 
 <div id="main-menu" class="screen active">
     <div class="menu-header">
-        <h1 class="main-title-gothic">𝔖𝔭𝔢𝔩𝔩𝔦𝔫𝔢 𝔊𝔞𝔪𝔢</h1>
+        <h1 class="main-title-gothic">𝔖𝔭𝔢𝔩𝔩𝔦𝔫𝔤 𝔊𝔞𝔪𝔢</h1>
         <div class="sub-title-clean">Teacher Khen Learning Hub</div>
     </div>
     <button class="menu-btn" onclick="playSfx('sfxTing'); showScreen('mode-screen')">START GAME<div class="shine"></div></button>
@@ -106,7 +106,7 @@
 
 <div id="settings-screen" class="screen">
     <div class="menu-header" style="margin-bottom:10px">
-        <h1 class="main-title-gothic" style="font-size:40px">𝔖𝔭𝔢𝔩𝔩𝔦𝔫𝔢 𝔊𝔞𝔪𝔢</h1>
+        <h1 class="main-title-gothic" style="font-size:40px">𝔖𝔭𝔢𝔩𝔩𝔦𝔫𝔤 𝔊𝔞𝔪𝔢</h1>
         <div class="sub-title-clean" style="font-size:16px">Teacher Khen Learning Hub</div>
     </div>
     <div class="settings-content">
@@ -199,6 +199,7 @@ function playSfx(id) {
     } 
 }
 
+// KEPT INTACT: Image pasting logic
 async function handlePaste(e) {
     if(!document.getElementById('settings-screen').classList.contains('active')) return;
     const items = (e.clipboardData || e.originalEvent.clipboardData).items;
@@ -294,7 +295,14 @@ function initTeam(idx){
     const t = game.teams[idx]; t.hp=state.hp; t.score=0; t.time=state.timer; t.qIdx=0; t.typed=""; t.alive=true; 
     t.letters.forEach(l => l.dom.remove()); t.letters=[]; t.isPaused = false;
     t.qList = [...state.questions];
-    if(!state.sync && idx===1) t.qList.sort(()=>Math.random()-0.8); else t.qList.sort(()=>Math.random()-0.5);
+    
+    // KEPT INTACT: Sync Off logic for first question variety
+    if(!state.sync && idx===1) {
+        t.qList.sort(()=>Math.random()-0.8);
+    } else {
+        t.qList.sort(()=>Math.random()-0.5);
+    }
+    
     document.getElementById(`t${idx+1}-score-top`).innerText = '0';
     if(idx===0) document.getElementById('t1-single-score').innerText = '0';
     document.getElementById(`t${idx+1}-char`).src = state.selected[idx];
@@ -345,7 +353,7 @@ function spawnLoop(idx){
         lane.appendChild(el);
         game.teams[idx].letters.push({ dom: el, x: startX, y: startY, char: el.innerText });
     }
-    setTimeout(() => spawnLoop(idx), 1500); // FIXED SPACING BY SLOWING SPAWN SLIGHTLY
+    setTimeout(() => spawnLoop(idx), 1500); 
 }
 
 function tick(){
@@ -364,7 +372,6 @@ function tick(){
             letObj.dom.style.left = letObj.x + 'px';
             const letRect = letObj.dom.getBoundingClientRect();
             
-            // COLLISION DETECTION - REMOVE ON HIT
             if(!t.isPaused && letRect.left < charRect.right && letRect.right > charRect.left && letRect.top < charRect.bottom && letRect.bottom > charRect.top){
                 const target = t.qList[t.qIdx].a;
                 if(letObj.char === target[t.typed.length]){
@@ -380,7 +387,7 @@ function tick(){
                         document.getElementById(`t${i+1}-next-layer`).style.display = 'flex';
                     }
                 } else { playSfx('sfxWrong'); t.hp--; updateHUD(i); if(t.hp <= 0) endGame(i); }
-                letObj.dom.remove(); t.letters.splice(j, 1); // BANISH AFTER REACHING CHARACTER
+                letObj.dom.remove(); t.letters.splice(j, 1); 
             } else if(letObj.x < -80) { letObj.dom.remove(); t.letters.splice(j, 1); }
         }
     });
@@ -400,7 +407,7 @@ function endGame(idx){
     document.getElementById(`t${idx+1}-final-score`).innerText = "Final Score: " + game.teams[idx].score;
 }
 
-function startMove(idx, dir) { if(!game.teams[idx].isPaused && game.teams[idx].alive) game.teams[idx].dy = dir * 18; } // ADJUSTED SENSITIVITY
+function startMove(idx, dir) { if(!game.teams[idx].isPaused && game.teams[idx].alive) game.teams[idx].dy = dir * 18; }
 function stopMove(idx) { game.teams[idx].dy = 0; }
 
 function proceedNext(idx) {
@@ -417,6 +424,7 @@ function updateAudio(){
     if(state.music && game.active) m.play().catch(()=>{}); else m.pause();
 }
 
+// KEPT INTACT: Save/Load functions
 function saveToFile(){ const b=new Blob([JSON.stringify(state)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='Lesson.json'; a.click(); }
 function loadFromFile(e){ const r=new FileReader(); r.onload=(ev)=>{ state=JSON.parse(ev.target.result); renderTable(); syncUI(); autoSave(); }; r.readAsText(e.target.files[0]); }
 function clearAllData() { if(confirm("Erase all data?")) { localStorage.removeItem('teacherKhen_Spelling_Pro'); location.reload(); } }
