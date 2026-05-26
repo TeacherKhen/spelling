@@ -86,7 +86,7 @@
 
 <div id="main-menu" class="screen active">
     <div class="menu-header">
-        <h1 class="main-title-gothic">𝔖𝔭𝔢𝔩𝔩𝔦𝔫𝔤 𝔊𝔞𝔪𝔢</h1>
+        <h1 class="main-title-gothic">𝔖𝔭𝔢𝔩𝔩𝔦𝔫𝔢 𝔊𝔞𝔪𝔢</h1>
         <div class="sub-title-clean">Teacher Khen Learning Hub</div>
     </div>
     <button class="menu-btn" onclick="playSfx('sfxTing'); showScreen('mode-screen')">START GAME<div class="shine"></div></button>
@@ -107,7 +107,7 @@
 
 <div id="settings-screen" class="screen">
     <div class="menu-header" style="margin-bottom:10px">
-        <h1 class="main-title-gothic" style="font-size:40px">𝔖𝔭𝔢𝔩𝔩𝔦𝔫𝔤 𝔊𝔞𝔪𝔢</h1>
+        <h1 class="main-title-gothic" style="font-size:40px">𝔖𝔭𝔢𝔩𝔩𝔦𝔫𝔢 𝔊𝔞𝔪𝔢</h1>
         <div class="sub-title-clean" style="font-size:16px">Teacher Khen Learning Hub</div>
     </div>
     <div class="settings-content">
@@ -346,12 +346,14 @@ function tick(){
     if(!game.active) return;
     game.teams.forEach((t, i) => {
         if(!t.alive) return;
-        const cont = document.getElementById(`t${i+1}-cont`);
-        if(!t.isPaused && t.dy !== 0){
-            let top = cont.offsetTop + t.dy;
-            cont.style.top = Math.max(0, Math.min(top, cont.parentElement.offsetHeight - 110)) + 'px';
+        const cont = document.getElementById(`t...${i+1}-cont`);
+        const tCont = document.getElementById(`t${i+1}-cont`);
+        if(tCont && !t.isPaused && t.dy !== 0){
+            let top = tCont.offsetTop + t.dy;
+            tCont.style.top = Math.max(0, Math.min(top, tCont.parentElement.offsetHeight - 110)) + 'px';
         }
-        const charRect = cont.getBoundingClientRect();
+        if(!tCont) return;
+        const charRect = tCont.getBoundingClientRect();
         for(let j=t.letters.length-1; j>=0; j--){
             const letObj = t.letters[j];
             if(!t.isPaused) letObj.x -= state.speed;
@@ -365,7 +367,7 @@ function tick(){
                     document.getElementById(`t${i+1}-boxes`).children[t.typed.length].innerText = letObj.char;
                     t.typed += letObj.char;
                     if(t.typed === target){
-                        t.isPaused = true; cont.classList.add('paused');
+                        t.isPaused = true; tCont.classList.add('paused');
                         document.getElementById(`t${i+1}-boxes`).innerHTML = `<div class="final-word">${target}</div>`;
                         playSfx('sfxNext'); t.score++; 
                         document.getElementById(`t${i+1}-score-top`).innerText = t.score;
@@ -391,6 +393,48 @@ function endGame(idx){
     game.teams[idx].alive = false;
     document.getElementById(`t${idx+1}-over`).style.display = 'flex';
     document.getElementById(`t${idx+1}-final-score`).innerText = "Final Score: " + game.teams[idx].score;
+    
+    // Clear any remaining floating letters for this side on game over
+    game.teams[idx].letters.forEach(l => l.dom.remove());
+    game.teams[idx].letters = [];
+}
+
+function resetSpecificTeam(idx) {
+    playSfx('sfxTing');
+    
+    // Clear existing letters on that side before resetting
+    game.teams[idx].letters.forEach(l => l.dom.remove());
+    
+    // Reinitialize only the target team setup variables 
+    const t = game.teams[idx];
+    t.hp = state.hp;
+    t.score = 0;
+    t.time = state.timer;
+    t.qIdx = 0;
+    t.typed = "";
+    t.alive = true;
+    t.letters = [];
+    t.isPaused = false;
+    
+    // Reset layout logic for single/shuffled lists
+    t.qList = [...state.questions];
+    if(!state.sync && idx === 1) t.qList.sort(() => Math.random() - 0.8); else t.qList.sort(() => Math.random() - 0.5);
+    
+    // Clear styles, hide layers, reset graphics components
+    document.getElementById(`t${idx+1}-score-top`).innerText = '0';
+    if(idx === 0) document.getElementById('t1-single-score').innerText = '0';
+    
+    const cont = document.getElementById(`t${idx+1}-cont`);
+    cont.classList.remove('paused');
+    cont.style.top = '40%';
+    
+    document.getElementById(`t${idx+1}-over`).style.display = 'none';
+    document.getElementById(`t${idx+1}-next-layer`).style.display = 'none';
+    
+    // Re-trigger setups and loops independently for this side
+    updateHUD(idx);
+    nextQ(idx);
+    spawnLoop(idx);
 }
 
 function startMove(idx, dir) { if(!game.teams[idx].isPaused && game.teams[idx].alive) game.teams[idx].dy = dir * 28; }
